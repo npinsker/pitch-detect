@@ -24,5 +24,5 @@ def shift_data_block_pitch(sound, label, num_half_tones):
   out_label = np.ndarray(shape=(0,12))
   for i in range(len(sound)):
     out_sound = np.vstack((out_sound, utilities.pitch_shift(sound[i], num_half_tones)))
-    out_label = np.vstack((out_label, np.concatenate((label[i,num_half_tones:], label[i,:num_half_tones]))))
+    out_label = np.vstack((out_label, np.concatenate((label[i,-num_half_tones:], label[i,:-num_half_tones]))))
   return out_sound, out_label

@@ -17,7 +17,7 @@ def read_classification_data(directory):
   sample_map = { }
   fname = 'raw/%s/%s' % (directory, CLASSIFICATION_DATA_FNAME)
   if not os.path.exists(fname):
-    return
+    return sample_map
   f = open(fname, 'r')
 
   for line in f:
@@ -40,10 +40,10 @@ def write_classification_data(directory, pitch_map):
 def pick_random_sound():
   global current_sound
   global PITCH_SAMPLE_MAP
-  current_sound = random.randint(0, num_samples)
+  current_sound = random.randint(0, num_samples-1)
   if len(PITCH_SAMPLE_MAP.keys()) < num_samples:
     while current_sound in PITCH_SAMPLE_MAP:
-      current_sound = random.randint(0, num_samples)
+      current_sound = random.randint(0, num_samples-1)
   else:
     current_sound = 0
     print 'All data (%d values) labeled!' % num_samples
@@ -61,7 +61,8 @@ if __name__ == '__main__':
     pygame.mixer.init()
 
     if len(PITCH_SAMPLE_MAP.keys()):
-      print 'Pitch map loaded with %d keys!' % (len(PITCH_SAMPLE_MAP.keys()))
+      nonx_keys = filter(lambda x: PITCH_SAMPLE_MAP[x] != 'x', PITCH_SAMPLE_MAP.keys())
+      print 'Pitch map loaded with %d keys (%d total)!' % (len(nonx_keys), len(PITCH_SAMPLE_MAP.keys()))
 
     pick_random_sound()
     print 'Ready for input...!'

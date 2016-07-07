@@ -24,7 +24,6 @@ def length_shift(signalin, tscale):
   win = hanning(N)
   p = 0
   pp = 0
-
   while p < L-(N+H):
 
     # take the spectra of two consecutive windows
@@ -56,6 +55,16 @@ def length_compress(signalin, tscale):
 # without changing the length.
 def pitch_shift(signalin, num_half_tones):
   adjust = pow(2, float(num_half_tones) / 12.)
-  compressed = length_compress(signalin, adjust)
-  return length_shift(compressed, 1. / adjust)
+  shifted = length_shift(signalin, 1. / adjust)
+  length_corrected = length_compress(shifted, adjust)
+  return length_corrected[:len(signalin)]
+
+# Maps a note (e.g. c4) to an integer index.
+def note_name_to_index(name):
+  note_map = {"c": 0, "c#": 1, "db": 1, "d": 2, "d#": 3, "eb": 3,
+              "e": 4, "f": 5, "f#": 6, "gb": 6, "g": 7, "g#": 8,
+              "ab": 8, "a": 9, "a#": 10, "bb": 10, "b": 11}
+  note, octave = name[:-1], name[-1]
+  return note_map[note]
+  #return note_map[note] + int(octave)
 
