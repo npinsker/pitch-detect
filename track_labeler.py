@@ -21,6 +21,8 @@ def read_classification_data(directory):
   f = open(fname, 'r')
 
   for line in f:
+    if line == '':
+      continue
     sample, pitch = line.split(':')
     sample = sample.strip()
     pitch = pitch.strip()

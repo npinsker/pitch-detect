@@ -25,6 +25,7 @@ def length_shift(signalin, tscale):
   p = 0
   pp = 0
   while p < L-(N+H):
+    print p, ',', (L-N-H)
 
     # take the spectra of two consecutive windows
     p1 = int(p)
