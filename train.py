@@ -32,6 +32,14 @@ for i in range(10*len(sound)):
   sound[k] = tmp
   label[k] = tmp_label
 
+#np.savetxt('sound_data.out', sound, delimiter=',')
+#np.savetxt('label_data.out', label, delimiter=',')
+
+#sound = np.loadtxt('sound_data.out', delimiter=',')
+#label = np.loadtxt('label_data.out', delimiter=',')
+print 'loaded data'
+print sound.shape
+
 test_data_size = len(sound) * 9 / 10
 test_sound = sound[test_data_size:]
 test_label = label[test_data_size:]
@@ -45,19 +53,40 @@ for i in range(len(sound)):
 for i in range(len(test_sound)):
   test_sound[i] = fft.fft(test_sound[i]).real
 
+def weight_variable(shape):
+  initial = tf.truncated_normal(shape, stddev=0.1)
+  return tf.Variable(initial)
+
+def bias_variable(shape):
+  initial = tf.constant(0.01, shape=shape)
+  return tf.Variable(initial)
+
 x = tf.placeholder(tf.float32, [None, SAMPLE_SIZE])
 
-W = tf.Variable(tf.zeros([SAMPLE_SIZE, 12]))
-b = tf.Variable(tf.zeros([12]))
+LAYER1_SIZE = 128
 
-y = tf.matmul(x, W) + b
+W1 = weight_variable([SAMPLE_SIZE, LAYER1_SIZE])
+b1 = bias_variable([LAYER1_SIZE])
+
+y1 = tf.nn.relu(tf.matmul(x, W1) + b1)
+
+keep_prob = tf.placeholder(tf.float32)
+y1_dropout = tf.nn.dropout(y1, keep_prob)
+
+W2 = weight_variable([LAYER1_SIZE, 12])
+b2 = bias_variable([12])
+
+y = tf.matmul(y1_dropout, W2) + b2
+
 y_ = tf.placeholder(tf.float32, [None,12])
 cross_entropy = tf.nn.softmax_cross_entropy_with_logits(y, y_)
 
-train_step = tf.train.AdagradOptimizer(1.).minimize(cross_entropy)
+train_step = tf.train.AdamOptimizer(4e-4).minimize(cross_entropy)
 
 correct_prediction = tf.equal(tf.argmax(y,1), tf.argmax(y_,1))
 accuracy = tf.reduce_mean(tf.cast(correct_prediction, tf.float32))
+
+saver = tf.train.Saver()
 
 init = tf.initialize_all_variables()
 sess = tf.Session()
@@ -65,14 +94,18 @@ sess.run(init)
 
 print 'starting loop'
 
-for i in range(4000):
-  sess.run(train_step, feed_dict={x: sound, y_: label})
-  if i % 100 == 9:
+for i in range(10000):
+  test_indices = np.random.choice(len(sound), 100)
+  test_x = np.array([sound[k] for k in test_indices])
+  test_y_ = np.array([label[k] for k in test_indices])
+  sess.run(train_step, feed_dict={x: test_x, y_: test_y_, keep_prob: 0.5})
+  if i % 100 == 99:
     print 'step %d' % (i+1)
-    print 'accuracy (train set):', sess.run(accuracy, feed_dict={x: sound, y_: label})
-    print 'accuracy (test  set):', sess.run(accuracy, feed_dict={x: test_sound, y_: test_label})
-    print sess.run(tf.argmax(y,1), feed_dict={x: test_sound, y_: test_label})
-print b.eval(sess)
+    print 'accuracy (train set):', sess.run(accuracy, feed_dict={x: test_x, y_: test_y_, keep_prob: 1.0})
+    if i % 10000 == 9999:
+      print 'accuracy (test  set):', sess.run(accuracy, feed_dict={x: test_sound, y_: test_label, keep_prob: 1.0})
+    print sess.run(tf.argmax(y,1), feed_dict={x: test_sound, y_: test_label, keep_prob: 1.0})
 
+save_path = saver.save(sess, 'model.ckpt')
+print 'Model saved to file: %s' % save_path
 
-print sess.run(accuracy, feed_dict={x: test_sound, y_: test_label})
